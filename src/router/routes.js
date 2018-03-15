@@ -4,7 +4,7 @@ export default [
     component: () => import('layouts/default'),
     children: [
       { path: '', component: () => import('pages/index') },
-      { path: 'loading', component: () => import('pages/loading') }
+      { path: 'update', component: () => import('pages/loading') }
     ]
   },
 
