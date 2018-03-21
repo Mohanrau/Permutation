@@ -12,7 +12,7 @@
         </q-btn>
         <q-toolbar-title>
           Permutation App
-          <div slot="subtitle">Running on v1.0.0</div>
+          <div slot="subtitle">Running on v1.2.1</div>
         </q-toolbar-title>
         <div class="row gutter-sm items-center">
           <div class="col-lg-auto">
@@ -64,6 +64,15 @@
             <q-toggle v-model="reverseState" color="amber"/>
           </q-item-side>
         </q-item>
+        <q-item tag="label" multiline>
+          <q-item-main>
+            <q-item-tile label>Number Substitute</q-item-tile>
+            <q-item-tile sublabel>Replace number in sequence</q-item-tile>
+          </q-item-main>
+          <q-item-side right>
+            <q-toggle v-model="localSub" color="amber"/>
+          </q-item-side>
+        </q-item>
         <q-item-separator/>
         <q-list-header>
           Form
@@ -71,7 +80,7 @@
         <q-item>
           <q-item-main>
             <q-input v-model="input"
-                     stack-label="Enter Number (1234, 3345, 554)"
+                     stack-label="Enter Number (1234 3345 554)"
                      color="grey-7"
                      type="textarea"
                      :min-rows="50"/>
@@ -88,6 +97,32 @@
     </q-layout-drawer>
     <q-page-container>
       <router-view/>
+      <q-modal v-model="localSub" no-backdrop-dismiss>
+        <div class="row group q-pa-lg justify-end">
+          <div class="col-lg-12">
+            <q-input v-model="inputSubMain"
+                     @input="calculateSubstitute"
+                     stack-label="Enter Number (1234 3345 554)"
+                     color="grey-7"
+                     type="number"/>
+          </div>
+          <div class="col-lg-12">
+            <q-input v-model="inputSub"
+                     readonly
+                     stack-label="Enter Number (1234 3345 554)"
+                     color="grey-7"
+                     type="textarea"
+                     :min-rows="50"/>
+          </div>
+          <div class="col-lg-auto q-mt-lg">
+            <q-btn
+            color="primary"
+            @click="localSub = false"
+            label="Close"
+            />
+          </div>
+        </div>
+      </q-modal>
     </q-page-container>
   </q-layout>
 </template>
@@ -116,6 +151,9 @@
     data () {
       return {
         input: '',
+        inputSub: '',
+        inputSubMain: '',
+        localSub: false,
         localNumbers: [],
         tempNumbers: [],
         leftDrawerOpen: this.$q.platform.desktop
@@ -157,6 +195,9 @@
     },
     methods: {
       openURL,
+      calculateSubstitute () {
+        this.inputSubMain.toString().split('')
+      },
       addNumber () {
         this.$q.loading.show({
           spinner: QSpinnerGears,
