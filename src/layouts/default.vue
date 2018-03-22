@@ -156,6 +156,7 @@
         localSub: false,
         localNumbers: [],
         tempNumbers: [],
+        digits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
         leftDrawerOpen: this.$q.platform.desktop
       }
     },
@@ -196,7 +197,23 @@
     methods: {
       openURL,
       calculateSubstitute () {
-        this.inputSubMain.toString().split('')
+        let subNumbers = []
+        subNumbers = this.inputSubMain.toString().split('')
+        if (subNumbers.length > 0) {
+          let substitudeArray = []
+          let tempDigits = []
+          subNumbers.forEach((digit, index) => {
+            substitudeArray = []
+            tempDigits = [...this.digits]
+            let indexDigits = tempDigits.findIndex(x => x === parseInt(digit))
+            tempDigits.splice(indexDigits, 1)
+            tempDigits.forEach((x) => {
+              subNumbers[index] = x
+              substitudeArray.push(subNumbers.join(''))
+            })
+          })
+          // console.log(substitudeArray)
+        }
       },
       addNumber () {
         this.$q.loading.show({
