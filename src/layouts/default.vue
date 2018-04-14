@@ -12,7 +12,7 @@
         </q-btn>
         <q-toolbar-title>
           Permutation App
-          <div slot="subtitle">Running on v1.2.1</div>
+          <div slot="subtitle">Running on v1.3.0</div>
         </q-toolbar-title>
         <div class="row gutter-sm items-center">
           <div class="col-lg-auto">
@@ -40,7 +40,7 @@
             </q-btn>
           </div>
           <div class="col-lg-auto" v-if="mutatedNumbers !== null">
-            {{ reverseState ? (10000 - mutatedNumbers.length) : mutatedNumbers.length }} / 10000
+            {{ reverseState ? mutatedNumbers.length : ((digit === 4 ? 100000 : 1000) - mutatedNumbers.length) }}/ {{ (digit === 4 ? 100000 : 1000) }}
           </div>
         </div>
       </q-toolbar>
@@ -55,6 +55,11 @@
       inset-delimiter
       >
         <q-list-header>Settings</q-list-header>
+        <q-item>
+          <q-item-main>
+            <q-select hide-underline class="q-ma-none full-width" @input="removeAllNumbers" v-model="digit" :options="digitOptions" />
+          </q-item-main>
+        </q-item>
         <q-item tag="label" multiline>
           <q-item-main>
             <q-item-tile label>Reverse Action</q-item-tile>
@@ -71,6 +76,15 @@
           </q-item-main>
           <q-item-side right>
             <q-toggle v-model="localSub" color="amber"/>
+          </q-item-side>
+        </q-item>
+        <q-item tag="label" multiline>
+          <q-item-main>
+            <q-item-tile label>Total</q-item-tile>
+            <q-item-tile sublabel>Enable or Disable Total information at PDF</q-item-tile>
+          </q-item-main>
+          <q-item-side right>
+            <q-toggle v-model="showTotal" color="amber"/>
           </q-item-side>
         </q-item>
         <q-item-separator/>
@@ -91,7 +105,7 @@
           <q-item-main>
             <q-item-tile label>{{ number }}</q-item-tile>
           </q-item-main>
-          <q-item-side right icon="info"/>
+          <q-item-side right icon="info"><q-tooltip  anchor="bottom middle" self="top middle" :offset="[10, 10]" :delay="500" max-height="500px">{{ getMutation(number) }}</q-tooltip></q-item-side>
         </q-item>
       </q-list>
     </q-layout-drawer>
@@ -102,21 +116,37 @@
           <div class="col-lg-12">
             <q-input v-model="inputSubMain"
                      @input="calculateSubstitute"
-                     stack-label="Enter Number (1234 3345 554)"
-                     color="grey-7"
-                     type="number"/>
+                     @blur="calculateSubstitute"
+                     stack-label="Enter Number 1234"
+                     color="grey-7"/>
           </div>
           <div class="col-lg-12">
             <q-input v-model="inputSub"
                      readonly
-                     stack-label="Enter Number (1234 3345 554)"
+                     stack-label="Result"
                      color="grey-7"
                      type="textarea"
                      :min-rows="50"/>
           </div>
           <div class="col-lg-auto q-mt-lg">
             <q-btn
-            color="primary"
+            color="warning"
+            @click="inputSubMain = null, inputSub = null"
+            label="Clear"
+            />
+          </div>
+          <div class="col-lg-auto q-mt-lg">
+            <q-btn
+            v-clipboard:copy="inputSub"
+            v-clipboard:success="onCopy"
+            v-clipboard:error="onError"
+            color="positive"
+            label="Copy">
+            </q-btn>
+          </div>
+          <div class="col-lg-auto q-mt-lg">
+            <q-btn
+            color="negative"
             @click="localSub = false"
             label="Close"
             />
@@ -143,13 +173,25 @@
     'reverseState',
     'mutatedNumbers',
     'comparedNumbers',
-    'numbers'
+    'numbers',
+    'digit'
   ])
   
   export default {
     name: 'LayoutDefault',
     data () {
       return {
+        showTotal: true,
+        digitOptions: [
+          {
+            value: 3,
+            label: '3 Digits'
+          },
+          {
+            value: 4,
+            label: '4 Digits'
+          }
+        ],
         input: '',
         inputSub: '',
         inputSubMain: '',
@@ -161,6 +203,14 @@
       }
     },
     computed: {
+      digit: {
+        get: function () {
+          return this.localStorage.digit !== null ? this.localStorage.digit : 4
+        },
+        set: function (value) {
+          this.localStorage.digit = value
+        }
+      },
       reverseState: {
         get: function () {
           return this.localStorage.reverseState !== null ? this.localStorage.reverseState : false
@@ -196,23 +246,26 @@
     },
     methods: {
       openURL,
+      getMutation (x) {
+        x = pad(x, this.digit)
+        return permutations(x, {unique: true})
+      },
       calculateSubstitute () {
-        let subNumbers = []
-        subNumbers = this.inputSubMain.toString().split('')
-        if (subNumbers.length > 0) {
-          let substitudeArray = []
-          let tempDigits = []
-          subNumbers.forEach((digit, index) => {
-            substitudeArray = []
-            tempDigits = [...this.digits]
-            let indexDigits = tempDigits.findIndex(x => x === parseInt(digit))
-            tempDigits.splice(indexDigits, 1)
-            tempDigits.forEach((x) => {
-              subNumbers[index] = x
-              substitudeArray.push(subNumbers.join(''))
+        if (this.inputSubMain !== null) {
+          let subNumbers = []
+          let substituteArray = []
+          let tempMainDigits = []
+          subNumbers = this.inputSubMain.toString().split('')
+          if (subNumbers.length > 0) {
+            subNumbers.forEach((n1, index1) => {
+              tempMainDigits = [...subNumbers]
+              this.digits.forEach((n2, index2) => {
+                tempMainDigits[index1] = n1 == n2 ? parseInt(n1) : parseInt(n2)
+                substituteArray.push(tempMainDigits.join(''))
+              })
             })
-          })
-          // console.log(substitudeArray)
+            this.inputSub = substituteArray.join(' ')
+          }
         }
       },
       addNumber () {
@@ -226,7 +279,7 @@
           this.tempNumbers = this.input.split(/\s+/)
           let mutationPromise = Promise.resolve(this.tempNumbers.forEach((x) => {
             if (x !== '' && x.length <= 4 && Number(x) || x === '0000' || x === '000' || x === '00' || x === '0') {
-              x = pad(x, 4)
+              x = pad(x, this.digit)
               let cmb = permutations(x, {unique: true})
               let mutatedNumbersStorage = this.localStorage.mutatedNumbers
               if (mutatedNumbersStorage !== null && mutatedNumbersStorage.length > 0) {
@@ -286,10 +339,14 @@
           var str = 'Page ' + data.pageCount
           // Total page number plugin only available in jspdf v1.0+
           if (typeof doc.putTotalPages === 'function') {
-            if (this.reverseState) {
-              str = str + ' of ' + totalPagesExp + ' - [Total Available ' + (10000 - count) + '/ 10000]'
+            if (this.showTotal) {
+              if (this.reverseState) {
+                str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + count + '/' + this.digit === 4 ? 100000 : 1000 + ']' + ' ------ [ Total Removed ' + ((this.digit === 4 ? 100000 : 1000) - count) + '/' + (this.digit === 4 ? 100000 : 1000) + ']'
+              } else {
+                str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + ((this.digit === 4 ? 100000 : 1000) - count) + '/' + (this.digit === 4 ? 100000 : 1000) + ']' + ' ------ [ Total Removed ' + count + '/' + (this.digit === 4 ? 100000 : 1000) + ']'
+              }
             } else {
-              str = str + ' of ' + totalPagesExp + ' - [Total Removed ' + count + '/ 10000]'
+              str = str + ' of ' + totalPagesExp
             }
           }
           doc.setFontSize(10)
@@ -316,6 +373,20 @@
         let generatePdfPromise = Promise.resolve(doc.save(id))
         Promise.all([generatePdfPromise]).then(() => {
           this.$q.loading.hide()
+        })
+      },
+      onCopy: function (e) {
+        this.$q.notify({
+          message: 'Copied',
+          position: 'bottom',
+          type: 'positive'
+        })
+      },
+      onError: function (e) {
+        this.$q.notify({
+          message: 'Copy Failed Try Again',
+          position: 'bottom',
+          type: 'negative'
         })
       }
     }
