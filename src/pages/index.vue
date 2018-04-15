@@ -33,13 +33,20 @@
     name: 'PageIndex',
     data: () => ({
       rows: 10,
-      cols: this.digit === 4 ? 100000 : 1000,
+      cols: 0,
       mutatedNumbersKey: 'mutatedNumbers',
     }),
+    watch: {
+      digit: {
+        handler () {
+          this.setCols()
+        }
+      }
+    },
     computed: {
       digit: {
         get: function () {
-          return this.localStorage.digit !== null ? this.localStorage.digit : 3
+          return this.localStorage.digit !== null ? this.localStorage.digit : 4
         }
       },
       mutatedNumbers: {
@@ -52,6 +59,9 @@
           return this.localStorage.reverseState !== null ? this.localStorage.reverseState : false
         }
       }
+    },
+    mounted () {
+      this.setCols()
     },
     methods: {
       pad,
@@ -67,6 +77,9 @@
           }
         }
         return true
+      },
+      setCols () {
+        this.cols = this.digit === 4 ? 10000 : 1000
       }
     }
   }

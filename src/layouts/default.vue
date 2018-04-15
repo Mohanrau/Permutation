@@ -12,7 +12,7 @@
         </q-btn>
         <q-toolbar-title>
           Permutation App
-          <div slot="subtitle">Running on v1.3.0</div>
+          <div slot="subtitle">Running on v1.4.0</div>
         </q-toolbar-title>
         <div class="row gutter-sm items-center">
           <div class="col-lg-auto">
@@ -244,6 +244,9 @@
         }
       }
     },
+    mounted () {
+      this.digit = this.digit !== null ? this.digit : 4
+    },
     methods: {
       openURL,
       getMutation (x) {
@@ -278,7 +281,7 @@
         setTimeout(() => {
           this.tempNumbers = this.input.split(/\s+/)
           let mutationPromise = Promise.resolve(this.tempNumbers.forEach((x) => {
-            if (x !== '' && x.length <= 4 && Number(x) || x === '0000' || x === '000' || x === '00' || x === '0') {
+            if (x !== '' && x.length <= this.digit && Number(x) || x === '0000' || x === '000' || x === '00' || x === '0') {
               x = pad(x, this.digit)
               let cmb = permutations(x, {unique: true})
               let mutatedNumbersStorage = this.localStorage.mutatedNumbers
@@ -331,7 +334,6 @@
         var totalPagesExp = "{total_pages_count_string}"
         var pageContent = (data) => {
           // HEADER
-          doc.setFontSize(25)
           doc.setTextColor(100)
           doc.setFontStyle('normal')
           
@@ -361,7 +363,7 @@
             fontSize: 15
           },
           bodyStyles: {
-            fontSize: 21,
+            fontSize: 20,
             textColor: 0
           }
         })
