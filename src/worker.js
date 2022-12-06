@@ -29,8 +29,7 @@ function handleMessage(e) {
         for (let j = 0; j < 1; j++) {
           let obj = {}
           for (let k = 0; k < 10; k++) {
-            let padding = Number(length)
-            let formattedNumber = `${(i + k) - 1}`.padStart(padding, '0')
+            let formattedNumber = pad(((i + k) - 1), length)
             if (mutatedNumbers
               && mutatedNumbers.length > 0
               && (!reverseState && mutatedNumbers.includes(formattedNumber))

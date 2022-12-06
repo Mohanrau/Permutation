@@ -131,7 +131,7 @@ export default defineComponent({
       worker.postMessage(
         {
           mutatedNumbers: JSON.stringify(mutatedNumbers.value),
-          padding: digit.value,
+          length: digit.value,
           operation: 'rebuild',
           reverseState: reverseState.value,
           rows: rows.value,
