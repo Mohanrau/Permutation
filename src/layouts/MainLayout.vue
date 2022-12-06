@@ -50,7 +50,7 @@
     </q-header>
 
     <q-drawer
-        v-model="leftDrawerOpen"
+        v-model="toggleLeftDrawer"
         show-if-above
         bordered
     >
