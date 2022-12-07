@@ -107,6 +107,13 @@ export default defineComponent({
         })
     )
 
+    let comparedNumbers = useObservable(
+      liveQuery(async () => {
+        let result = await db.comparedNumbers.toArray()
+        return result.length > 0 ? JSON.parse(result[0].value) : []
+      })
+    )
+
     const columns = [
       {title: '#1#', name: '#1#', prop: '1', dataKey: '1'},
       {title: '#2#', name: '#2#', prop: '2', dataKey: '2'},
@@ -171,6 +178,7 @@ export default defineComponent({
       db,
       digit,
       mutatedNumbers,
+      comparedNumbers,
       reverseState,
       cols,
       rows,
@@ -229,7 +237,7 @@ export default defineComponent({
         unit: 'pt'
       })
       //let res = doc.autoTableHtmlToJson(element)
-      let count = this.mutatedNumbers.length
+      let count = this.comparedNumbers.length
       let totalPagesExp = '{total_pages_count_string}'
       let pageContent = (data) => {
         // HEADER
@@ -242,9 +250,9 @@ export default defineComponent({
         if (typeof doc.putTotalPages === 'function') {
           if (this.showTotal) {
             if (this.reverseState) {
-              str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + count + '/' + this.digit === 4 ? 100000 : 1000 + ']' + ' ------ [ Total Removed ' + ((this.digit === 4 ? 100000 : 1000) - count) + '/' + (this.digit === 4 ? 100000 : 1000) + ']'
+              str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + count + '/' + this.digit === 4 ? 10000 : 1000 + ']' + ' ------ [ Total Removed ' + ((this.digit === 4 ? 10000 : 1000) - count) + '/' + (this.digit === 4 ? 10000 : 1000) + ']'
             } else {
-              str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + ((this.digit === 4 ? 100000 : 1000) - count) + '/' + (this.digit === 4 ? 100000 : 1000) + ']' + ' ------ [ Total Removed ' + count + '/' + (this.digit === 4 ? 100000 : 1000) + ']'
+              str = str + ' of ' + totalPagesExp + ' - [ Total Available ' + ((this.digit === 4 ? 10000 : 1000) - count) + '/' + (this.digit === 4 ? 10000 : 1000) + ']' + ' ------ [ Total Removed ' + count + '/' + (this.digit === 4 ? 10000 : 1000) + ']'
             }
           } else {
             str = str + ' of ' + totalPagesExp
