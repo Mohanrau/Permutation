@@ -40,8 +40,8 @@
               Export To Excel
             </q-btn>
           </div>
-          <div class="col-lg-auto" v-if="mutatedNumbers">
-            {{ reverseState ? mutatedNumbers.length : ((digit === 4 ? 10000 : 1000) - mutatedNumbers.length) }}/
+          <div class="col-lg-auto">
+         {{ comparedNumbers.length }} /
             {{ (digit === 4 ? 10000 : 1000) }}
           </div>
           <div class="col-lg-auto">Running on v2.0.0</div>
@@ -266,6 +266,10 @@ export default defineComponent({
       mutatedNumbers.value = newValue
     }, {deep: true})
 
+    watch(() => liveComparedNumbers.value, newValue => {
+      comparedNumbers.value = newValue
+    }, {deep: true})
+
     const updateDigit = async () => {
       let digitExist = await db.settings.get('digit')
       if (digitExist) {
@@ -464,6 +468,7 @@ export default defineComponent({
       localNumbers,
       tempNumbers,
       input,
+      liveComparedNumbers,
     }
   },
   data() {
