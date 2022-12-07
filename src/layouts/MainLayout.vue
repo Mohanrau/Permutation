@@ -41,8 +41,8 @@
             </q-btn>
           </div>
           <div class="col-lg-auto" v-if="mutatedNumbers">
-            {{ reverseState ? mutatedNumbers.length : ((digit === 4 ? 100000 : 1000) - mutatedNumbers.length) }}/
-            {{ (digit === 4 ? 100000 : 1000) }}
+            {{ reverseState ? mutatedNumbers.length : ((digit === 4 ? 10000 : 1000) - mutatedNumbers.length) }}/
+            {{ (digit === 4 ? 10000 : 1000) }}
           </div>
           <div class="col-lg-auto">Running on v2.0.0</div>
         </div>
@@ -251,6 +251,13 @@ export default defineComponent({
         })
     )
 
+    let liveComparedNumbers = useObservable(
+      liveQuery(async () => {
+        let result = await db.comparedNumbers.toArray()
+        return result.length > 0 ? JSON.parse(result[0].value) : []
+      })
+    )
+
     watch(() => liveNumbers.value, newValue => {
       numbers.value = newValue
     }, {deep: true})
@@ -341,7 +348,7 @@ export default defineComponent({
     const updateComparedNumbers = async (data = false) => {
       let items = data ? data : comparedNumbers.value
       items = JSON.stringify(items)
-      let comparedNumbersExist = await db.mutatedNumbers.get('comparedNumbers')
+      let comparedNumbersExist = await db.comparedNumbers.get('comparedNumbers')
       if (comparedNumbersExist) {
         await db.comparedNumbers.put({
           key: 'comparedNumbers',
@@ -356,7 +363,7 @@ export default defineComponent({
     }
 
     const exportToXLSX = () => {
-      let data = mutatedNumbers.value.map(x => {
+      let data = liveComparedNumbers.value.map(x => {
         return {
           'Mutations': x
         }
@@ -498,7 +505,6 @@ export default defineComponent({
       }
     },
     async addNumber() {
-      console.time('AddNumbers')
       this.$q.loading.show({
         spinner: QSpinnerGears,
         spinnerSize: 150, // in pixels
@@ -510,25 +516,6 @@ export default defineComponent({
 
       this.tempNumbers = this.input.split(/\s+/)
       worker.postMessage({ tempNumbers: JSON.stringify(this.tempNumbers), length: this.digit });
-      // let mutationPromise = new Promise((resolve) => {
-      //   this.tempNumbers.forEach(async (x) => {
-      //     if (x !== '' && x.length <= this.digit && Number(x) || x === '0000' || x === '000' || x === '00' || x === '0') {
-      //       x = pad(x, this.digit)
-      //       let cmb = permutations(x, {unique: true})
-      //       this.numbers.push(x)
-      //       this.mutatedNumbers = [...this.mutatedNumbers, ...cmb]
-      //     }
-      //   })
-      //   resolve(true)
-      // })
-
-      // this.tempNumbers = []
-      // this.localNumbers = []
-      // this.input = ''
-      // Promise.all([mutationPromise]).then((x) => {
-      //   this.$q.loading.hide()
-      // })
-      console.timeEnd('AddNumbers')
     },
     async removeAllNumbers() {
       this.$q.loading.show({
@@ -541,6 +528,7 @@ export default defineComponent({
 
       await db.mutatedNumbers.bulkDelete(['mutatedNumbers'])
       await db.numbers.bulkDelete(['numbers'])
+      await db.numbers.bulkDelete(['comparedNumbers'])
 
       await new Promise((resolve) => setTimeout(resolve,this.delay));
 

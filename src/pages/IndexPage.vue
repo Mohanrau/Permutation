@@ -99,6 +99,7 @@ export default defineComponent({
           return result ? result.value : false
         })
     )
+
     let mutatedNumbers = useObservable(
         liveQuery(async () => {
           let result = await db.mutatedNumbers.toArray()
@@ -118,6 +119,23 @@ export default defineComponent({
       {title: '#9#', name: '#9#', prop: '9', dataKey: '9'},
       {title: '#10#', name: '#10#', prop: '10', dataKey: '10'},
     ]
+
+    const updateComparedNumbers = async (data = []) => {
+      let items = data
+      items = JSON.stringify(items)
+      let comparedNumbersExist = await db.comparedNumbers.get('comparedNumbers')
+      if (comparedNumbersExist) {
+        await db.comparedNumbers.put({
+          key: 'comparedNumbers',
+          value: items
+        })
+      } else {
+        await db.comparedNumbers.add({
+          key: 'comparedNumbers',
+          value: items
+        })
+      }
+    }
 
     let makeNumbers = () => {
 
@@ -144,6 +162,7 @@ export default defineComponent({
 
     async function handleMessage(e) {
       items.value = e.data.items || []
+      await updateComparedNumbers(e.data.availableNumbers || [])
       await new Promise(resolve => setTimeout(resolve, 1500))
       $q.loading.hide()
     }

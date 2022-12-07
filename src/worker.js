@@ -22,6 +22,7 @@ function handleMessage(e) {
     self.postMessage({ numbers: numbers, mutatedNumbers: mutatedNumbers });
   } else {
     let tableData = []
+    let availableNumbers = []
     mutatedNumbers = JSON.parse(mutatedNumbers)
 
     for (let i = 0; i < cols; i++) {
@@ -36,6 +37,8 @@ function handleMessage(e) {
               || (mutatedNumbers && reverseState && !mutatedNumbers.includes(formattedNumber))
             ) {
               formattedNumber = '-'
+            } else {
+              availableNumbers.push(formattedNumber)
             }
             obj[k + 1] = formattedNumber
           }
@@ -44,7 +47,7 @@ function handleMessage(e) {
       }
     }
 
-    self.postMessage({ items: tableData });
+    self.postMessage({ items: tableData, availableNumbers: availableNumbers });
   }
 }
 
