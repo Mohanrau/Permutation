@@ -65,7 +65,6 @@ import jsPDF from 'jspdf'
 import {autoTable, autoTableHtmlToJson} from 'jspdf-autotable'
 
 import Worker from "worker-loader!../worker"
-import pad from 'pad-number'
 
 const worker = new Worker();
 
@@ -98,6 +97,19 @@ export default defineComponent({
           let result = await db.settings.get({key: 'reverseState'})
           return result ? result.value : false
         })
+    )
+
+    let disablePermutation = useObservable(
+      liveQuery(async () => {
+        let result = await db.settings.get({key: 'disablePermutation'})
+        return result ? result.value : false
+      })
+    )
+    let numbers = useObservable(
+      liveQuery(async () => {
+        let result = await db.numbers.toArray()
+        return result.length > 0 ? JSON.parse(result[0].value) : []
+      })
     )
 
     let mutatedNumbers = useObservable(
@@ -155,10 +167,12 @@ export default defineComponent({
 
       worker.postMessage(
         {
+          numbers: JSON.stringify(numbers.value),
           mutatedNumbers: JSON.stringify(mutatedNumbers.value),
           length: digit.value,
           operation: 'rebuild',
           reverseState: reverseState.value,
+          disablePermutation: disablePermutation.value,
           rows: rows.value,
           cols: cols.value,
         }
@@ -180,6 +194,7 @@ export default defineComponent({
       mutatedNumbers,
       comparedNumbers,
       reverseState,
+      disablePermutation,
       cols,
       rows,
       items,
@@ -205,6 +220,13 @@ export default defineComponent({
       deep: true
     },
     reverseState: {
+      handler() {
+        this.makeNumbers()
+      },
+      immediate: true,
+      deep: true
+    },
+    disablePermutation: {
       handler() {
         this.makeNumbers()
       },

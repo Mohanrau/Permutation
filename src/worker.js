@@ -4,22 +4,24 @@ import permutations from 'permutation'
 self.addEventListener('message', handleMessage);
 
 function handleMessage(e) {
-  let { operation = 'add', tempNumbers = '[]', mutatedNumbers= '[]', length = 4, cols = 1000, rows = 10, reverseState = false } = e.data
+  let { operation = 'add', tempNumbers = '[]', mutatedNumbers= '[]', length = 4, cols = 1000, rows = 10, reverseState = false, disablePermutation = false } = e.data
   if (operation === 'add') {
-    let numbers = []
+    let numbers  = []
     let mutatedNumbers = []
 
     tempNumbers = JSON.parse(tempNumbers)
 
    tempNumbers.forEach(async (x) => {
       if (x !== '' && x.length <= length && Number(x) || x === '0000' || x === '000' || x === '00' || x === '0') {
+        let combinations = []
         x = pad(x, length)
-        let combinations = permutations(x, {unique: true})
+        combinations = permutations(x, {unique: true})
+
         numbers.push(x)
         mutatedNumbers = [...mutatedNumbers, ...combinations]
       }
     })
-    self.postMessage({ numbers: numbers, mutatedNumbers: mutatedNumbers });
+    self.postMessage({ numbers: numbers, mutatedNumbers: disablePermutation ? tempNumbers : mutatedNumbers });
   } else {
     let tableData = []
     let availableNumbers = []

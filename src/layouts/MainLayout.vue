@@ -44,7 +44,7 @@
          {{ comparedNumbers.length }} /
             {{ (digit === 4 ? 10000 : 1000) }}
           </div>
-          <div class="col-lg-auto">Running on v2.0.0</div>
+          <div class="col-lg-auto">Running on v2.1.0</div>
         </div>
       </q-toolbar>
     </q-header>
@@ -77,6 +77,20 @@
             </q-item-label>
           </q-item-section>
         </q-item>
+        <q-item>
+          <q-item-section>
+            <q-item-label>
+              Turn Off Mutation
+            </q-item-label>
+            <q-item-label caption>
+              Change app MODE
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle size="xl" keep-color v-model="disablePermutation" color="red" @update:model-value="multiCall"/>
+          </q-item-section>
+        </q-item>
+        <q-separator />
         <q-item>
           <q-item-section>
             <q-item-label>
@@ -204,10 +218,7 @@
 
 <script>
 import {defineComponent, onMounted, ref, watch} from 'vue'
-import {QSpinnerGears, uid, useQuasar, copyToClipboard} from 'quasar'
-import jsPDF from 'jspdf'
-import permutations from 'permutation'
-import pad from 'pad-number'
+import {QSpinnerGears, useQuasar, copyToClipboard} from 'quasar'
 import {db} from 'src/utils/dexie'
 import {useObservable} from '@vueuse/rxjs'
 import {liveQuery} from 'dexie'
@@ -223,6 +234,7 @@ export default defineComponent({
     const $q = useQuasar()
 
     let digit = ref(4)
+    let disablePermutation = ref(false)
     let reverseState = ref(false)
     let showTotal = ref(true)
     let numbers = ref([])
@@ -270,6 +282,48 @@ export default defineComponent({
       comparedNumbers.value = newValue
     }, {deep: true})
 
+    const multiCall = async () => {
+      await prompt()
+      await updateDisablePermutation()
+    }
+
+    const prompt = async () => {
+        await new Promise((resolve, reject) => {
+          $q.dialog({
+            title: 'Attention !',
+            message: 'Are sure perform this action, All data will be erased !',
+            ok: 'Yes',
+            cancel: 'No',
+            persistent: true
+          }).onOk(() => {
+            removeAllNumbers()
+            resolve(true)
+          }).onCancel(async () => {
+            let result = await db.settings.get({key: 'disablePermutation'})
+            disablePermutation.value = result ? result.value : false
+            reject(false)
+          })
+        })
+    }
+
+    const removeAllNumbers = async () => {
+      $q.loading.show({
+        spinner: QSpinnerGears,
+        spinnerSize: 150, // in pixels
+        spinnerColor: 'white',
+        customClass: 'bg-negative'
+      })
+      await new Promise((resolve) => setTimeout(resolve,delay));
+
+      await db.mutatedNumbers.bulkDelete(['mutatedNumbers'])
+      await db.numbers.bulkDelete(['numbers'])
+      await db.numbers.bulkDelete(['comparedNumbers'])
+
+      await new Promise((resolve) => setTimeout(resolve,delay));
+
+      $q.loading.hide()
+    }
+
     const updateDigit = async () => {
       let digitExist = await db.settings.get('digit')
       if (digitExist) {
@@ -281,6 +335,21 @@ export default defineComponent({
         await db.settings.add({
           key: 'digit',
           value: digit.value
+        })
+      }
+    }
+
+    const updateDisablePermutation = async () => {
+      let digitExist = await db.settings.get('disablePermutation')
+      if (digitExist) {
+        await db.settings.put({
+          key: 'disablePermutation',
+          value: disablePermutation.value
+        })
+      } else {
+        await db.settings.add({
+          key: 'disablePermutation',
+          value: disablePermutation.value
         })
       }
     }
@@ -369,7 +438,7 @@ export default defineComponent({
     const exportToXLSX = () => {
       let data = liveComparedNumbers.value.map(x => {
         return {
-          'Mutations': x
+          'Numbers': x
         }
       })
       let opts = [{sheetid: 'One', header: true}]
@@ -401,6 +470,11 @@ export default defineComponent({
         digit.value = dbDigit.value
       }
 
+      let dbDisablePermutation = await db.settings.get('disablePermutation')
+      if (dbDisablePermutation) {
+        disablePermutation.value = dbDisablePermutation.value
+      }
+
       let dbReverseState = await db.settings.get('reverseState')
       if (dbReverseState) {
         reverseState.value = dbReverseState.value
@@ -426,6 +500,7 @@ export default defineComponent({
         comparedNumbers.value = JSON.parse(dbComparedNumbers.value)
       }
 
+      await updateDisablePermutation()
       await updateDigit()
       await updateReverseState()
       await updateShowTotal()
@@ -459,6 +534,7 @@ export default defineComponent({
       updateReverseState,
       updateMutatedNumbers,
       updateComparedNumbers,
+      updateDisablePermutation,
       liveMutatedNumbers,
       exportToXLSX,
       copySubstituteText,
@@ -469,6 +545,10 @@ export default defineComponent({
       tempNumbers,
       input,
       liveComparedNumbers,
+      disablePermutation,
+      removeAllNumbers,
+      prompt,
+      multiCall,
     }
   },
   data() {
@@ -520,24 +600,7 @@ export default defineComponent({
       await new Promise((resolve) => setTimeout(resolve,this.delay));
 
       this.tempNumbers = this.input.split(/\s+/)
-      worker.postMessage({ tempNumbers: JSON.stringify(this.tempNumbers), length: this.digit });
-    },
-    async removeAllNumbers() {
-      this.$q.loading.show({
-        spinner: QSpinnerGears,
-        spinnerSize: 150, // in pixels
-        spinnerColor: 'white',
-        customClass: 'bg-negative'
-      })
-      await new Promise((resolve) => setTimeout(resolve,this.delay));
-
-      await db.mutatedNumbers.bulkDelete(['mutatedNumbers'])
-      await db.numbers.bulkDelete(['numbers'])
-      await db.numbers.bulkDelete(['comparedNumbers'])
-
-      await new Promise((resolve) => setTimeout(resolve,this.delay));
-
-      this.$q.loading.hide()
+      worker.postMessage({ tempNumbers: JSON.stringify(this.tempNumbers), length: this.digit, disablePermutation: this.disablePermutation });
     },
   }
 })
